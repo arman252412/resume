@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Custom checkbox */
+        .custom-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #4f46e5;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .custom-checkbox:checked {
+            background-color: #4f46e5;
+        }
+        
+        .custom-checkbox:checked::after {
+            content: "✓";
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            left: 3px;
+            top: -1px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-indigo-700">Class Management</h1>
+                <p class="text-gray-600">Manage your classes efficiently</p>
+            </div>
+            <button id="addClassBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center transition-all">
+                <i class="fas fa-plus mr-2"></i> Add New Class
+            </button>
+        </header>
+        
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-indigo-500">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-500">Total Classes</p>
+                        <h3 class="text-2xl font-bold" id="totalClasses">0</h3>
+                    </div>
+                    <div class="bg-indigo-100 p-3 rounded-full">
+                        <i class="fas fa-chalkboard-teacher text-indigo-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-500">Active Classes</p>
+                        <h3 class="text-2xl font-bold" id="activeClasses">0</h3>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-500">Upcoming Classes</p>
+                        <h3 class="text-2xl font-bold" id="upcomingClasses">0</h3>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <i class="fas fa-calendar-alt text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Class List -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-xl font-semibold text-gray-800">Class List</h2>
+                <div class="relative">
+                    <input type="text" id="searchClass" placeholder="Search classes..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Instructor</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="classTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Classes will be added here dynamically -->
+                        <tr id="noClassesRow">
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">No classes added yet. Click "Add New Class" to get started.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Class Modal -->
+    <div id="addClassModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-full max-w-md mx-4 fade-in">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-lg font-semibold">Add New Class</h3>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="classForm" class="p-4">
+                <div class="mb-4">
+                    <label for="className" class="block text-sm font-medium text-gray-700 mb-1">Class Name</label>
+                    <input type="text" id="className" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="instructor" class="block text-sm font-medium text-gray-700 mb-1">Instructor</label>
+                    <input type="text" id="instructor" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="schedule" class="block text-sm font-medium text-gray-700 mb-1">Schedule</label>
+                    <input type="text" id="schedule" placeholder="e.g., Mon/Wed 10:00-11:30" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select id="status" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                        <option value="active">Active</option>
+                        <option value="upcoming">Upcoming</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancelBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Add Class</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Class Modal -->
+    <div id="editClassModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-full max-w-md mx-4 fade-in">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-lg font-semibold">Edit Class</h3>
+                <button id="closeEditModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="editClassForm" class="p-4">
+                <input type="hidden" id="editClassId">
+                <div class="mb-4">
+                    <label for="editClassName" class="block text-sm font-medium text-gray-700 mb-1">Class Name</label>
+                    <input type="text" id="editClassName" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="editInstructor" class="block text-sm font-medium text-gray-700 mb-1">Instructor</label>
+                    <input type="text" id="editInstructor" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="editSchedule" class="block text-sm font-medium text-gray-700 mb-1">Schedule</label>
+                    <input type="text" id="editSchedule" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="editStatus" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select id="editStatus" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                        <option value="active">Active</option>
+                        <option value="upcoming">Upcoming</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancelEditBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-full max-w-md mx-4 fade-in">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-lg font-semibold">Confirm Deletion</h3>
+                <button id="closeConfirmModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-4">
+                <p class="text-gray-700 mb-6">Are you sure you want to delete this class? This action cannot be undone.</p>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancelDeleteBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100">Cancel</button>
+                    <button type="button" id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Sample data
+        let classes = [
+            {
+                id: 1,
+                name: "Mathematics 101",
+                instructor: "Dr. Smith",
+                schedule: "Mon/Wed 10:00-11:30",
+                status: "active"
+            },
+            {
+                id: 2,
+                name: "Computer Science Fundamentals",
+                instructor: "Prof. Johnson",
+                schedule: "Tue/Thu 14:00-15:30",
+                status: "upcoming"
+            },
+            {
+                id: 3,
+                name: "Literature Survey",
+                instructor: "Dr. Williams",
+                schedule: "Fri 09:00-12:00",
+                status: "completed"
+            }
+        ];
+        
+        // DOM Elements
+        const addClassBtn = document.getElementById('addClassBtn');
+        const addClassModal = document.getElementById('addClassModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const classForm = document.getElementById('classForm');
+        const classTableBody = document.getElementById('classTableBody');
+        const noClassesRow = document.getElementById('noClassesRow');
+        const totalClassesElement = document.getElementById('totalClasses');
+        const activeClassesElement = document.getElementById('activeClasses');
+        const upcomingClassesElement = document.getElementById('upcomingClasses');
+        const searchClassInput = document.getElementById('searchClass');
+        const editClassModal = document.getElementById('editClassModal');
+        const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const editClassForm = document.getElementById('editClassForm');
+        const confirmModal = document.getElementById('confirmModal');
+        const closeConfirmModalBtn = document.getElementById('closeConfirmModalBtn');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        
+        // Variables
+        let classToDeleteId = null;
+        
+        // Initialize the app
+        function init() {
+            renderClasses();
+            updateStats();
+            
+            // Event listeners
+            addClassBtn.addEventListener('click', () => {
+                addClassModal.classList.remove('hidden');
+            });
+            
+            closeModalBtn.addEventListener('click', closeAddModal);
+            cancelBtn.addEventListener('click', closeAddModal);
+            
+            classForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                addNewClass();
+            });
+            
+            searchClassInput.addEventListener('input', filterClasses);
+            
+            closeEditModalBtn.addEventListener('click', closeEditModal);
+            cancelEditBtn.addEventListener('click', closeEditModal);
+            
+            editClassForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveEditedClass();
+            });
+            
+            closeConfirmModalBtn.addEventListener('click', closeConfirmModal);
+            cancelDeleteBtn.addEventListener('click', closeConfirmModal);
+            confirmDeleteBtn.addEventListener('click', deleteClass);
+        }
+        
+        // Render classes to the table
+        function renderClasses(filteredClasses = null) {
+            const classesToRender = filteredClasses || classes;
+            
+            if (classesToRender.length === 0) {
+                noClassesRow.classList.remove('hidden');
+                classTableBody.innerHTML = '';
+                classTableBody.appendChild(noClassesRow);
+                return;
+            }
+            
+            noClassesRow.classList.add('hidden');
+            classTableBody.innerHTML = '';
+            
+            classesToRender.forEach(cls => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.dataset.id = cls.id;
+                
+                // Status badge
+                let statusBadge = '';
+                if (cls.status === 'active') {
+                    statusBadge = '<span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Active</span>';
+                } else if (cls.status === 'upcoming') {
+                    statusBadge = '<span class="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Upcoming</span>';
+                } else {
+                    statusBadge = '<span class="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">Completed</span>';
+                }
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">${cls.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${cls.instructor}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${cls.schedule}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="edit-btn text-indigo-600 hover:text-indigo-900 mr-3" data-id="${cls.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="delete-btn text-red-600 hover:text-red-900" data-id="${cls.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                
+                classTableBody.appendChild(row);
+            });
+            
+            // Add event listeners to edit and delete buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const classId = parseInt(e.currentTarget.dataset.id);
+                    openEditModal(classId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const classId = parseInt(e.currentTarget.dataset.id);
+                    openConfirmModal(classId);
+                });
+            });
+        }
+        
+        // Update statistics
+        function updateStats() {
+            totalClassesElement.textContent = classes.length;
+            
+            const activeCount = classes.filter(cls => cls.status === 'active').length;
+            activeClassesElement.textContent = activeCount;
+            
+            const upcomingCount = classes.filter(cls => cls.status === 'upcoming').length;
+            upcomingClassesElement.textContent = upcomingCount;
+        }
+        
+        // Add new class
+        function addNewClass() {
+            const className = document.getElementById('className').value;
+            const instructor = document.getElementById('instructor').value;
+            const schedule = document.getElementById('schedule').value;
+            const status = document.getElementById('status').value;
+            
+            const newClass = {
+                id: classes.length > 0 ? Math.max(...classes.map(c => c.id)) + 1 : 1,
+                name: className,
+                instructor: instructor,
+                schedule: schedule,
+                status: status
+            };
+            
+            classes.push(newClass);
+            renderClasses();
+            updateStats();
+            closeAddModal();
+            classForm.reset();
+            
+            // Show success notification
+            showNotification('Class added successfully!', 'success');
+        }
+        
+        // Filter classes based on search input
+        function filterClasses() {
+            const searchTerm = searchClassInput.value.toLowerCase();
+            
+            if (searchTerm === '') {
+                renderClasses();
+                return;
+            }
+            
+            const filtered = classes.filter(cls => 
+                cls.name.toLowerCase().includes(searchTerm) || 
+                cls.instructor.toLowerCase().includes(searchTerm) ||
+                cls.schedule.toLowerCase().includes(searchTerm) ||
+                cls.status.toLowerCase().includes(searchTerm)
+            );
+            
+            renderClasses(filtered);
+        }
+        
+        // Open edit modal
+        function openEditModal(classId) {
+            const cls = classes.find(c => c.id === classId);
+            
+            if (cls) {
+                document.getElementById('editClassId').value = cls.id;
+                document.getElementById('editClassName').value = cls.name;
+                document.getElementById('editInstructor').value = cls.instructor;
+                document.getElementById('editSchedule').value = cls.schedule;
+                document.getElementById('editStatus').value = cls.status;
+                
+                editClassModal.classList.remove('hidden');
+            }
+        }
+        
+        // Save edited class
+        function saveEditedClass() {
+            const classId = parseInt(document.getElementById('editClassId').value);
+            const className = document.getElementById('editClassName').value;
+            const instructor = document.getElementById('editInstructor').value;
+            const schedule = document.getElementById('editSchedule').value;
+            const status = document.getElementById('editStatus').value;
+            
+            const classIndex = classes.findIndex(c => c.id === classId);
+            
+            if (classIndex !== -1) {
+                classes[classIndex] = {
+                    id: classId,
+                    name: className,
+                    instructor: instructor,
+                    schedule: schedule,
+                    status: status
+                };
+                
+                renderClasses();
+                updateStats();
+                closeEditModal();
+                
+                // Show success notification
+                showNotification('Class updated successfully!', 'success');
+            }
+        }
+        
+        // Open confirmation modal
+        function openConfirmModal(classId) {
+            classToDeleteId = classId;
+            confirmModal.classList.remove('hidden');
+        }
+        
+        // Delete class
+        function deleteClass() {
+            classes = classes.filter(c => c.id !== classToDeleteId);
+            renderClasses();
+            updateStats();
+            closeConfirmModal();
+            
+            // Show success notification
+            showNotification('Class deleted successfully!', 'success');
+        }
+        
+        // Close modals
+        function closeAddModal() {
+            addClassModal.classList.add('hidden');
+        }
+        
+        function closeEditModal() {
+            editClassModal.classList.add('hidden');
+        }
+        
+        function closeConfirmModal() {
+            confirmModal.classList.add('hidden');
+            classToDeleteId = null;
+        }
+        
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white font-medium flex items-center ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} fade-in`;
+            notification.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+                ${message}
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+        
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
